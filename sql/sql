@@ -1,0 +1,4 @@
+#!/bin/bash
+SQLPATH=`dirname "$0"`
+cd "$SQLPATH"
+. config.sh
