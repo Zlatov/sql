@@ -1,0 +1,13 @@
+{
+    "name": "zlatov/sql",
+    "description": "Init and dump",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "iadfeshchm",
+            "email": "zlatov@ya.ru"
+        }
+    ],
+    "minimum-stability": "dev"
+}
