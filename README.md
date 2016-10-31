@@ -61,3 +61,5 @@
 - ./sql version
 \- вывести текущую версию БД и последнюю версию миграции
 
+## Установка
+<code>composer require zlatov/sql:dev-master</code>

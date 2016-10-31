@@ -76,7 +76,8 @@ function createConfig {
     fi
 
     echo -n "Пароль: "
-    read DBPASS
+    read -s DBPASS
+    echo
 
     echo -n "Адрес удаленного сервера (user@server) или алиас (myserver): "
     read REMOTE_NAME
@@ -86,7 +87,6 @@ function createConfig {
 
     echo "#!/bin/bash
 
-VENDORPATH=\"/vendor\"
 DBHOST=\"$DBHOST\"
 DBNAME=\"$DBNAME\"
 DBUSER=\"$DBUSER\"
@@ -95,13 +95,68 @@ DBPASS=\"$DBPASS\"
 REMOTE_NAME=\"$REMOTE_NAME\"
 REMOTE_PATH=\"$REMOTE_PATH\"
 
-. \"..\$VENDORPATH/zlatov/sql/src/config.sh\"
-
 echo -en \$COLOR_GREEN
-echo \"Конфигурационный файл \$BASH_ARGV был включён.\"
+echo \"Конфигурационный файл \$BASH_ARGV был включен.\"
 echo \"Работа с базой данных: \$DBNAME\"
 echo -en \$STYLE_DEFAULT
+
 " > config.sh
+
+    if [ ! -f ./config.sh ]
+        then
+            echo -en $COLOR_RED
+            echo "Конфигурационный файл НЕ создан!"
+            echo -en $STYLE_DEFAULT
+        else
+            echo -en $COLOR_GREEN
+            echo "Конфигурационный файл успешно создан."
+            echo -en $STYLE_DEFAULT
+    fi
+
+}
+
+function createDefaultFolders {
+    if [ ! -d ./dump ]; then
+        # mkdir -p dump
+        mkdir dump
+        if [ -d ./dump ]; then
+            echo -en $COLOR_GREEN
+            echo "Создана папка размещения дампов (dump/)"
+            echo -en $STYLE_DEFAULT
+        fi
+    fi
+    if [ ! -d ./migration ]; then
+        mkdir migration
+        if [ -d ./migration ]; then
+            echo -en $COLOR_GREEN
+            echo "Создана папка хранения миграций (migration/)"
+            echo -en $STYLE_DEFAULT
+        fi
+    fi
+    if [ ! -d ./procedures ]; then
+        mkdir procedures
+        if [ -d ./procedures ]; then
+            echo -en $COLOR_GREEN
+            echo "Создана папка хранения процедур (procedures/)"
+            echo -en $STYLE_DEFAULT
+        fi
+    fi
+}
+
+function checkGitignore {
+    if [ ! -f ./.gitignore ]; then
+        echo "
+dump/*.sql
+dump/*.tar.gz
+" > .gitignore
+        if [ -f ./.gitignore ]; then
+            echo -en $COLOR_GREEN
+            echo "Файл .gitignore успешно создан."
+            echo -en $STYLE_DEFAULT
+        fi
+    else
+        echo
+    fi
 }
 
 function dumpList {

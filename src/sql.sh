@@ -1,7 +1,7 @@
 #!/bin/bash
-if [ -f ./vendor/zlatov/sql/src/config.sh ]
+if [ -f ../vendor/zlatov/sql/src/config.sh ]
     then
-    . "./vendor/zlatov/sql/src/config.sh"
+    . "../vendor/zlatov/sql/src/config.sh"
 fi
 
 if [ -f ./config.sh ]
@@ -13,6 +13,9 @@ case $1 in
     init)
         if [ ! -f ./config.sh ]
             then
+                echo -en $COLOR_RED
+                echo "Конифигурационный файл config.sh не найден."
+                echo -en $STYLE_DEFAULT
                 echo -en $COLOR_GREEN
                 yN "Создать конифигурационный файл? [yes/No]"
                 echo -en $STYLE_DEFAULT
@@ -26,9 +29,8 @@ case $1 in
             then
                 createConfig
         fi
-        mkdir -p dump
-        mkdir -p migration
-        mkdir -p procedures
+        createDefaultFolders
+        checkGitignore
         ;;
     dumplist)
         dumpList
@@ -47,7 +49,21 @@ case $1 in
                 echo "Список локальных дампов:"
                 ls -la dump
             else
-                echo "Отправляем $2 на сервер $REMOTE_NAME в $REMOTE_PATH"
+                if [ ! -f ./config.sh ]
+                    then
+                        echo -en $COLOR_RED
+                        echo "Не найден конфигурационный файл."
+                        echo -en $STYLE_DEFAULT
+                    else
+                        if [ ! -f ./dump/$2 ]
+                            then
+                                echo -en $COLOR_RED
+                                echo "Не найден дамп $2."
+                                echo -en $STYLE_DEFAULT
+                            else
+                                echo "Отправляем $2 на сервер $REMOTE_NAME в $REMOTE_PATH"
+                        fi
+                fi
         fi
         ;;
     pull)
