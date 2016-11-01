@@ -163,3 +163,48 @@ function dumpList {
     echo "Список локальных дампов"
     ls -la dump
 }
+
+function checkTableVersion {
+    TEMP=`mysql --host=$DBHOST --port=3306 --user="$DBUSER" --password="$DBPASS" --execute="
+SELECT TABLE_NAME
+FROM information_schema.tables
+WHERE table_schema = '$DBNAME'
+AND table_name = 'sqlversion';
+"`
+    if echo $TEMP | grep -q 'sqlversion'
+        then
+            echo -en $COLOR_GREEN
+            echo "Таблица версий найдена."
+            echo -en $STYLE_DEFAULT
+        else
+            echo -en $COLOR_RED
+            echo "Таблица версий не найдена."
+            echo -en $STYLE_DEFAULT
+            yN "Создать таблицу версий? [yes/NO]"
+            if [[ $YN -eq 1 ]]; then
+                createTableVersion
+            fi
+    fi
+}
+
+function createTableVersion {
+    TEMP=`mysql --host=$DBHOST --port=3306 --user="$DBUSER" --password="$DBPASS" --execute="
+-- CREATE TABLE newzlatov.sqlversion (
+--     sqlversion VARCHAR(11) NOT NULL,
+-- UNIQUE INDEX sqlversion_UNIQUE (sqlversion ASC));
+
+-- CREATE TABLE $DBNAME.sqlversion (
+--   v1 INT UNSIGNED NOT NULL,
+--   v2 INT UNSIGNED NOT NULL,
+--   v3 INT UNSIGNED NOT NULL,
+-- UNIQUE INDEX uq_sqlversion_123 (v1 ASC, v2 ASC, v3 ASC));
+
+CREATE TABLE $DBNAME.sqlversion (
+  \\\`1\\\` INT UNSIGNED NOT NULL,
+  \\\`2\\\` INT UNSIGNED NOT NULL,
+  \\\`3\\\` INT UNSIGNED NOT NULL,
+UNIQUE INDEX uq_sqlversion_123 (\\\`1\\\` ASC, \\\`2\\\` ASC, \\\`3\\\` ASC));
+
+"`
+    echo $TEMP
+}

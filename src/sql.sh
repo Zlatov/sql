@@ -31,6 +31,7 @@ case $1 in
         fi
         createDefaultFolders
         checkGitignore
+        checkTableVersion
         ;;
     dumplist)
         dumpList
