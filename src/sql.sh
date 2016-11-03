@@ -31,7 +31,18 @@ case $1 in
         fi
         createDefaultFolders
         checkGitignore
-        checkTableVersion
+        if [[ $(checkTableVersionExist) -eq 1 ]]
+            then
+                echo -n ''
+            else
+                echo -en $COLOR_RED
+                echo "Таблица версий не найдена."
+                echo -en $STYLE_DEFAULT
+                yN "Создать таблицу версий? [yes/NO]"
+                if [[ $YN -eq 1 ]]; then
+                    createTableVersion
+                fi
+        fi
         ;;
     dumplist)
         dumpList
@@ -77,8 +88,22 @@ case $1 in
         fi
         ;;
     migrate)
+        migrateToLastVersion
+        ;;
+    migrations)
+        migrationsList
         ;;
     version)
+        echoVersion
+        ;;
+    dbname)
+        echoDbName
+        ;;
+    dbuser)
+        echoDbUser
+        ;;
+    dbconf)
+        echoDbConf
         ;;
     *)
         sqlMan

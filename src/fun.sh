@@ -1,36 +1,7 @@
 #!/bin/bash
 
 function sqlMan {
-    echo "./sql init"
-    echo "  настройка доступа к бд и адреса удаленного сервера"
-    echo ""
-    echo "./sql dumplist"
-    echo "  список дампов"
-    echo ""
-    echo "./sql dump"
-    echo "  создать дамп"
-    echo ""
-    echo "./sql dump filename"
-    echo "  восстановить из дампа filename"
-    echo ""
-    echo "./sql push"
-    echo "  список локальных дампов"
-    echo ""
-    echo "./sql push filename"
-    echo "  отправка локального дампа на сервер"
-    echo ""
-    echo "./sql pull"
-    echo "  список удаленных дампов"
-    echo ""
-    echo "./sql pull filename"
-    echo "  получение удаленного дампа с сервера"
-    echo ""
-    echo "./sql migrate"
-    echo "  выполнить все миграции которые больше текущей версии БД"
-    echo ""
-    echo "./sql version"
-    echo "  вывести текущую версию БД и последнюю версию миграции"
-    echo ""
+    cat ../vendor/zlatov/sql/src/man.txt
 }
 
 function yN {
@@ -95,10 +66,10 @@ DBPASS=\"$DBPASS\"
 REMOTE_NAME=\"$REMOTE_NAME\"
 REMOTE_PATH=\"$REMOTE_PATH\"
 
-echo -en \$COLOR_GREEN
-echo \"Конфигурационный файл \$BASH_ARGV был включен.\"
-echo \"Работа с базой данных: \$DBNAME\"
-echo -en \$STYLE_DEFAULT
+#echo -en \$COLOR_GREEN
+#echo \"Конфигурационный файл \$BASH_ARGV был включен.\"
+#echo \"Работа с базой данных: \$DBNAME\"
+#echo -en \$STYLE_DEFAULT
 
 " > config.sh
 
@@ -164,7 +135,7 @@ function dumpList {
     ls -la dump
 }
 
-function checkTableVersion {
+function checkTableVersionExist {
     TEMP=`mysql --host=$DBHOST --port=3306 --user="$DBUSER" --password="$DBPASS" --execute="
 SELECT TABLE_NAME
 FROM information_schema.tables
@@ -173,17 +144,9 @@ AND table_name = 'sqlversion';
 "`
     if echo $TEMP | grep -q 'sqlversion'
         then
-            echo -en $COLOR_GREEN
-            echo "Таблица версий найдена."
-            echo -en $STYLE_DEFAULT
+            echo 1
         else
-            echo -en $COLOR_RED
-            echo "Таблица версий не найдена."
-            echo -en $STYLE_DEFAULT
-            yN "Создать таблицу версий? [yes/NO]"
-            if [[ $YN -eq 1 ]]; then
-                createTableVersion
-            fi
+            echo 0
     fi
 }
 
@@ -208,3 +171,152 @@ UNIQUE INDEX uq_sqlversion_123 (\\\`1\\\` ASC, \\\`2\\\` ASC, \\\`3\\\` ASC));
 "`
     echo $TEMP
 }
+
+function echoVersion {
+    if [[ `checkTableVersionExist` -eq 1 ]]; then
+        TEMP=$(mysql --host=$DBHOST --port=3306 --user="$DBUSER" --password="$DBPASS" -s --execute="
+        SELECT concat(\`1\`, '.', \`2\`, '.', \`3\`) as version FROM newzlatov.sqlversion LIMIT 1;
+        ")
+        echo -en $COLOR_GREEN
+        echo -e "Версия БД:                 $STYLE_DEFAULT$TEMP"
+        echo -en $STYLE_DEFAULT
+    fi
+    echo -en $COLOR_GREEN
+    echo -n "Версия последней миграции: "
+    echo -en $STYLE_DEFAULT
+    # LANG=C ls migration | tail -1
+    LANG=C ls migration | grep  '.sql' | sed -r 's/\.sql//' | tail -1
+}
+
+function migrateToLastVersion {
+    # Текущая версия
+    DB_VERSION=$(mysql --host=$DBHOST --port=3306 --user="$DBUSER" --password="$DBPASS" -s --execute="
+    SELECT concat(\`1\`, '.', \`2\`, '.', \`3\`) as version FROM newzlatov.sqlversion LIMIT 1;
+    ")
+    echo -en $COLOR_GREEN
+    echo -e "Версия БД: $STYLE_DEFAULT$DB_VERSION"
+    echo -en $STYLE_DEFAULT
+
+    # Версии миграций
+    # так:
+
+    # VERSIONS=(`LANG=C ls migration | grep  '.sql' | sed -r 's/\.sql//'`)
+    # echo "VERSIONS: "
+    # for value in "${VERSIONS[@]}"
+    # do
+    #     echo $value
+    # done
+
+    # или так:
+
+    declare -a VERSIONS
+    while read line
+    do
+        VERSIONS=("${VERSIONS[@]}" "$line")
+    done < <(LANG=C ls migration | grep  '.sql' | sed -r 's/\.sql//')
+
+    # Перебор и выполнение необходимых миграций
+    dbArray=(${DB_VERSION//./ })
+    for mVersion in "${VERSIONS[@]}"
+    do
+        mArray=(${mVersion//./ })
+        if [[ ${mArray[0]} -gt ${dbArray[0]} ]]
+            then
+                migrate $mVersion
+                if [ $? -eq 1 ]; then break; fi
+            else
+                if [[ ${mArray[1]} -gt ${dbArray[1]} ]]
+                    then
+                        migrate $mVersion
+                        if [ $? -eq 1 ]; then break; fi
+                    else
+                        if [[ ${mArray[2]} -gt ${dbArray[2]} ]]
+                            then
+                                migrate $mVersion
+                                if [ $? -eq 1 ]; then break; fi
+                        fi
+                fi
+        fi
+    done
+}
+
+function migrate {
+    echo -en $COLOR_GREEN
+    echo -e "Миграция базы к версии $STYLE_DEFAULT$1:"
+    echo -en $STYLE_DEFAULT
+    (mysql --database="$DBNAME" --user="$DBUSER" --password="$DBPASS" -s < "./migration/$1.sql") >/dev/null
+    # echo $?
+    if [ $? -eq 0 ]
+        then
+            echo -en $COLOR_GREEN
+            echo -e "Миграция $STYLE_DEFAULT$1 ${COLOR_GREEN}прошла успешно."
+            echo -en $STYLE_DEFAULT
+            mArray=(${1//./ })
+            mysql --database="$DBNAME" --user="$DBUSER" --password="$DBPASS" -s -e"
+            UPDATE \`sqlversion\` SET \`1\`='${mArray[0]}', \`2\`='${mArray[1]}', \`3\`='${mArray[2]}' WHERE \`name\`='version';
+            ";
+        else
+            echo -en $COLOR_RED
+            echo -e "Ошибка миграции $STYLE_DEFAULT$1"
+            echo -en $STYLE_DEFAULT
+            echo 1 1>&2 2>/dev/null
+            # echo $?
+            if [[ $? -eq 1 ]]; then echo "error"; else echo "done"; fi
+            echo "--"
+    fi
+}
+
+function migrationsList {
+    VERSIONS=(`LANG=C ls migration | grep  '.sql' | sed -r 's/\.sql//'`)
+    echo -en $COLOR_GREEN
+    echo "Версии миграций:"
+    echo -en $STYLE_DEFAULT
+    for value in "${VERSIONS[@]}"
+    do
+        echo $value
+    done
+}
+
+function echoDbName {
+    if [ ! -f ./config.sh ]
+        then
+            echo -en $COLOR_RED
+            echo "Конифигурационный файл config.sh не найден."
+            echo -en $STYLE_DEFAULT
+        else
+            echo -en $COLOR_GREEN
+            echo "Работа с базой данных: $DBNAME"
+            echo -en $STYLE_DEFAULT
+    fi
+}
+
+function echoDbUser {
+    if [ ! -f ./config.sh ]
+        then
+            echo -en $COLOR_RED
+            echo "Конифигурационный файл config.sh не найден."
+            echo -en $STYLE_DEFAULT
+        else
+            echo -en $COLOR_GREEN
+            echo "Работа с базой данных от пользователя: $DBUSER"
+            echo -en $STYLE_DEFAULT
+    fi
+}
+
+function echoDbConf {
+    if [ ! -f ./config.sh ]
+        then
+            echo -en $COLOR_RED
+            echo "Конифигурационный файл config.sh не найден."
+            echo -en $STYLE_DEFAULT
+        else
+            echo -en $COLOR_GREEN
+            echo -e "Работа с базой данных: $STYLE_DEFAULT$DBNAME"
+            echo -en $COLOR_GREEN
+            echo -e "на:                    $STYLE_DEFAULT$DBHOST"
+            echo -en $COLOR_GREEN
+            echo -e "От пользователя:       $STYLE_DEFAULT$DBUSER"
+            echo -en $STYLE_DEFAULT
+    fi
+}
+
