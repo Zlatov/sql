@@ -115,18 +115,20 @@ function createDefaultFolders {
 }
 
 function checkGitignore {
-    if [ ! -f ./.gitignore ]; then
-        echo "
+    if [ ! -f ./.gitignore ]
+        then
+            echo "
 dump/*.sql
 dump/*.tar.gz
+config.sh
+sql
 " > .gitignore
-        if [ -f ./.gitignore ]; then
-            echo -en $COLOR_GREEN
-            echo "Файл .gitignore успешно создан."
-            echo -en $STYLE_DEFAULT
-        fi
-    else
-        echo
+            if [ -f ./.gitignore ]
+                then
+                    echo -en $COLOR_GREEN
+                    echo "Файл .gitignore успешно создан."
+                    echo -en $STYLE_DEFAULT
+            fi
     fi
 }
 
@@ -136,7 +138,7 @@ function dumpList {
 }
 
 function checkTableVersionExist {
-    TEMP=`mysql --host=$DBHOST --port=3306 --user="$DBUSER" --password="$DBPASS" --execute="
+    TEMP=`mysql --host=$DBHOST --port=3306 --user="$DBUSER" --database="$DBNAME" --execute="
 SELECT TABLE_NAME
 FROM information_schema.tables
 WHERE table_schema = '$DBNAME'
@@ -151,48 +153,70 @@ AND table_name = 'sqlversion';
 }
 
 function createTableVersion {
-    TEMP=`mysql --host=$DBHOST --port=3306 --user="$DBUSER" --password="$DBPASS" --execute="
--- CREATE TABLE newzlatov.sqlversion (
---     sqlversion VARCHAR(11) NOT NULL,
--- UNIQUE INDEX sqlversion_UNIQUE (sqlversion ASC));
-
--- CREATE TABLE $DBNAME.sqlversion (
---   v1 INT UNSIGNED NOT NULL,
---   v2 INT UNSIGNED NOT NULL,
---   v3 INT UNSIGNED NOT NULL,
--- UNIQUE INDEX uq_sqlversion_123 (v1 ASC, v2 ASC, v3 ASC));
-
-CREATE TABLE $DBNAME.sqlversion (
-  \\\`1\\\` INT UNSIGNED NOT NULL,
-  \\\`2\\\` INT UNSIGNED NOT NULL,
-  \\\`3\\\` INT UNSIGNED NOT NULL,
-UNIQUE INDEX uq_sqlversion_123 (\\\`1\\\` ASC, \\\`2\\\` ASC, \\\`3\\\` ASC));
-
-"`
-    echo $TEMP
+    `mysql --host=$DBHOST --port=3306 --user="$DBUSER" --database="$DBNAME" --execute="
+        CREATE TABLE \\\`sqlversion\\\` (
+          \\\`name\\\` varchar(45) NOT NULL,
+          \\\`value\\\` varchar(45) NOT NULL,
+          PRIMARY KEY (\\\`name\\\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+        INSERT INTO sqlversion VALUES ('version', '0.0.0');
+    "`
+    if [[ $? -eq 1 ]]
+        then
+            echo -en $COLOR_RED
+            echo -e "Ошибка создания таблицы версий."
+            echo -en $STYLE_DEFAULT
+        else
+            echo -en $COLOR_GREEN
+            echo -e "Таблица версий успешно создана."
+            echo -en $STYLE_DEFAULT
+    fi
 }
 
 function echoVersion {
-    if [[ `checkTableVersionExist` -eq 1 ]]; then
-        TEMP=$(mysql --host=$DBHOST --port=3306 --user="$DBUSER" --password="$DBPASS" -s --execute="
-        SELECT concat(\`1\`, '.', \`2\`, '.', \`3\`) as version FROM newzlatov.sqlversion LIMIT 1;
-        ")
-        echo -en $COLOR_GREEN
-        echo -e "Версия БД:                 $STYLE_DEFAULT$TEMP"
-        echo -en $STYLE_DEFAULT
+    if [[ `checkTableVersionExist` -eq 0 ]]
+        then
+            echo -en $COLOR_RED
+            echo -e "Таблица версий БД не создана."
+            echo -en $STYLE_DEFAULT
+            yN "Создать таблицу версий? [yes/NO]"
+            if [[ $YN -eq 1 ]]
+                then
+                    createTableVersion
+            fi
+    fi
+    if [[ `checkTableVersionExist` -eq 1 ]]
+        then
+            # TEMP=$(mysql --host=$DBHOST --port=3306 --user="$DBUSER" -s --execute="
+            #     -- SELECT concat(\`1\`, '.', \`2\`, '.', \`3\`) as version FROM sqlversion LIMIT 1;
+            #     SELECT \`value\` as version FROM \`sqlversion\` WHERE name = 'version';
+            # ")
+            TEMP=$(getDbVersion)
+            if [[ $TEMP == '' ]]; then
+                TEMP="Нет версии"
+            fi
+            echo -en $COLOR_GREEN
+            echo -e "Версия БД:                 $STYLE_DEFAULT$TEMP"
+            echo -en $STYLE_DEFAULT
+    fi
+    MVERSION=`LANG=C ls migration | grep  '.sql' | sed -r 's/\.sql//' | tail -1`
+    if [[ $MVERSION == ''  ]]; then
+        echo "Нет миграций"
     fi
     echo -en $COLOR_GREEN
-    echo -n "Версия последней миграции: "
+    echo -e "Версия последней миграции: $STYLE_DEFAULT$MVERSION"
     echo -en $STYLE_DEFAULT
-    # LANG=C ls migration | tail -1
-    LANG=C ls migration | grep  '.sql' | sed -r 's/\.sql//' | tail -1
+}
+
+function getDbVersion {
+    echo $(mysql --host=$DBHOST --port=3306 --user="$DBUSER" --database="$DBNAME" -s --execute="
+        SELECT \`value\` as version FROM \`sqlversion\` WHERE name = 'version';
+    ")
 }
 
 function migrateToLastVersion {
     # Текущая версия
-    DB_VERSION=$(mysql --host=$DBHOST --port=3306 --user="$DBUSER" --password="$DBPASS" -s --execute="
-    SELECT concat(\`1\`, '.', \`2\`, '.', \`3\`) as version FROM newzlatov.sqlversion LIMIT 1;
-    ")
+    DB_VERSION=$(getDbVersion)
     echo -en $COLOR_GREEN
     echo -e "Версия БД: $STYLE_DEFAULT$DB_VERSION"
     echo -en $STYLE_DEFAULT
@@ -223,17 +247,17 @@ function migrateToLastVersion {
         if [[ ${mArray[0]} -gt ${dbArray[0]} ]]
             then
                 migrate $mVersion
-                if [ $? -eq 1 ]; then break; fi
+                if [ $MIGRATION_STATUS -eq 1 ]; then break; fi
             else
                 if [[ ${mArray[1]} -gt ${dbArray[1]} ]]
                     then
                         migrate $mVersion
-                        if [ $? -eq 1 ]; then break; fi
+                        if [ $MIGRATION_STATUS -eq 1 ]; then break; fi
                     else
                         if [[ ${mArray[2]} -gt ${dbArray[2]} ]]
                             then
                                 migrate $mVersion
-                                if [ $? -eq 1 ]; then break; fi
+                                if [ $MIGRATION_STATUS -eq 1 ]; then break; fi
                         fi
                 fi
         fi
@@ -244,25 +268,21 @@ function migrate {
     echo -en $COLOR_GREEN
     echo -e "Миграция базы к версии $STYLE_DEFAULT$1:"
     echo -en $STYLE_DEFAULT
-    (mysql --database="$DBNAME" --user="$DBUSER" --password="$DBPASS" -s < "./migration/$1.sql") >/dev/null
-    # echo $?
-    if [ $? -eq 0 ]
+    (mysql --host=$DBHOST --port=3306 --user="$DBUSER" --database="$DBNAME" -s < "./migration/$1.sql") >/dev/null
+    MIGRATION_STATUS=$?
+    if [ $MIGRATION_STATUS -eq 0 ]
         then
             echo -en $COLOR_GREEN
-            echo -e "Миграция $STYLE_DEFAULT$1 ${COLOR_GREEN}прошла успешно."
+            echo "Успешно."
             echo -en $STYLE_DEFAULT
             mArray=(${1//./ })
-            mysql --database="$DBNAME" --user="$DBUSER" --password="$DBPASS" -s -e"
-            UPDATE \`sqlversion\` SET \`1\`='${mArray[0]}', \`2\`='${mArray[1]}', \`3\`='${mArray[2]}' WHERE \`name\`='version';
+            mysql --database="$DBNAME" --user="$DBUSER" -s -e"
+                UPDATE \`sqlversion\` SET \`value\`='$1' WHERE \`name\`='version';
             ";
         else
             echo -en $COLOR_RED
             echo -e "Ошибка миграции $STYLE_DEFAULT$1"
             echo -en $STYLE_DEFAULT
-            echo 1 1>&2 2>/dev/null
-            # echo $?
-            if [[ $? -eq 1 ]]; then echo "error"; else echo "done"; fi
-            echo "--"
     fi
 }
 

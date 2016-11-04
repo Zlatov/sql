@@ -7,6 +7,7 @@ fi
 if [ -f ./config.sh ]
     then
     . "./config.sh"
+    export MYSQL_PWD="$DBPASS" # вместо --password="$DBPASS"
 fi
 
 case $1 in
@@ -17,13 +18,13 @@ case $1 in
                 echo "Конифигурационный файл config.sh не найден."
                 echo -en $STYLE_DEFAULT
                 echo -en $COLOR_GREEN
-                yN "Создать конифигурационный файл? [yes/No]"
+                yN "Создать конифигурационный файл? [yes/NO]"
                 echo -en $STYLE_DEFAULT
             else
                 echo -en $COLOR_RED
                 echo "Найден конфигурационный файл"
                 echo -en $STYLE_DEFAULT
-                yN "Перезаписать конифигурационный файл? [yes/No]"
+                yN "Перезаписать конифигурационный файл? [yes/NO]"
         fi
         if [[ $YN -eq 1 ]]
             then
@@ -31,10 +32,8 @@ case $1 in
         fi
         createDefaultFolders
         checkGitignore
-        if [[ $(checkTableVersionExist) -eq 1 ]]
+        if [[ $(checkTableVersionExist) -eq 0 ]]
             then
-                echo -n ''
-            else
                 echo -en $COLOR_RED
                 echo "Таблица версий не найдена."
                 echo -en $STYLE_DEFAULT
