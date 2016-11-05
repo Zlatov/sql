@@ -112,6 +112,22 @@ function createDefaultFolders {
             echo -en $STYLE_DEFAULT
         fi
     fi
+    if [ ! -d ./triggers ]; then
+        mkdir triggers
+        if [ -d ./triggers ]; then
+            echo -en $COLOR_GREEN
+            echo "Создана папка хранения процедур (triggers/)"
+            echo -en $STYLE_DEFAULT
+        fi
+    fi
+    if [ ! -d ./data ]; then
+        mkdir data
+        if [ -d ./data ]; then
+            echo -en $COLOR_GREEN
+            echo "Создана папка хранения процедур (data/)"
+            echo -en $STYLE_DEFAULT
+        fi
+    fi
 }
 
 function checkGitignore {
