@@ -116,7 +116,7 @@ function createDefaultFolders {
         mkdir triggers
         if [ -d ./triggers ]; then
             echo -en $COLOR_GREEN
-            echo "Создана папка хранения процедур (triggers/)"
+            echo "Создана папка хранения триггеров (triggers/)"
             echo -en $STYLE_DEFAULT
         fi
     fi
@@ -124,7 +124,7 @@ function createDefaultFolders {
         mkdir data
         if [ -d ./data ]; then
             echo -en $COLOR_GREEN
-            echo "Создана папка хранения процедур (data/)"
+            echo "Создана папка хранения тестовых или обязательных данных (data/)"
             echo -en $STYLE_DEFAULT
         fi
     fi
