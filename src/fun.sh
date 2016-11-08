@@ -285,7 +285,52 @@ function migrateToLastVersion {
         TRIGGERS=("${TRIGGERS[@]}" "$line")
     done < <(LANG=C ls triggers | grep  '.sql' | sed -r 's/\.sql//')
     if [[ ${#TRIGGERS[*]} -gt 0 ]]; then
-        echo "triggers exist."
+        for trigger in "${TRIGGERS[@]}"
+        do
+            echo -en $COLOR_GREEN
+            echo -e "Применение триггеров в $STYLE_DEFAULT$trigger:"
+            echo -en $STYLE_DEFAULT
+            (mysql --host=$DBHOST --port=3306 --user="$DBUSER" --database="$DBNAME" -s < "./triggers/$trigger") >/dev/null
+            TRIGGER_STATUS=$?
+            if [ $TRIGGER_STATUS -eq 0 ]
+                then
+                    echo -en $COLOR_GREEN
+                    echo "Успешно."
+                    echo -en $STYLE_DEFAULT
+                else
+                    echo -en $COLOR_RED
+                    echo -e "Ошибка применения триггеров."
+                    echo -en $STYLE_DEFAULT
+                    break
+            fi
+        done
+    fi
+
+    declare -a PROCEDURES
+    while read line
+    do
+        PROCEDURES=("${PROCEDURES[@]}" "$line")
+    done < <(LANG=C ls procedures | grep  '.sql' | sed -r 's/\.sql//')
+    if [[ ${#PROCEDURES[*]} -gt 0 ]]; then
+        for procedure in "${PROCEDURES[@]}"
+        do
+            echo -en $COLOR_GREEN
+            echo -e "Применение процедур в $STYLE_DEFAULT$procedure:"
+            echo -en $STYLE_DEFAULT
+            (mysql --host=$DBHOST --port=3306 --user="$DBUSER" --database="$DBNAME" -s < "./procedures/$procedure") >/dev/null
+            PROCEDURE_STATUS=$?
+            if [ $PROCEDURE_STATUS -eq 0 ]
+                then
+                    echo -en $COLOR_GREEN
+                    echo "Успешно."
+                    echo -en $STYLE_DEFAULT
+                else
+                    echo -en $COLOR_RED
+                    echo -e "Ошибка применения процедур."
+                    echo -en $STYLE_DEFAULT
+                    break
+            fi
+        done
     fi
 }
 
