@@ -278,6 +278,15 @@ function migrateToLastVersion {
                 fi
         fi
     done
+
+    declare -a TRIGGERS
+    while read line
+    do
+        TRIGGERS=("${TRIGGERS[@]}" "$line")
+    done < <(LANG=C ls triggers | grep  '.sql' | sed -r 's/\.sql//')
+    if [[ ${#TRIGGERS[*]} -gt 0 ]]; then
+        echo "triggers exist."
+    fi
 }
 
 function migrate {
