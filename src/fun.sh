@@ -285,13 +285,13 @@ function migrateToLastVersion {
     fi
 
     dbVersionArray=(${DB_VERSION//./ })
-    if [ $MIGRATION_STATUS -eq 0 ] && [ ${dbVersionArray[0]} -gt 0 ]
+    if [[ $MIGRATION_STATUS -eq 0 ]] && [ ${dbVersionArray[0]} -gt 0 ]
         then
             declare -a TRIGGERS
             while read line
             do
                 TRIGGERS=("${TRIGGERS[@]}" "$line")
-            done < <(LANG=C ls triggers | grep  '.sql' | sed -r 's/\.sql//')
+            done < <(LANG=C ls triggers | grep  '.sql')
             if [[ ${#TRIGGERS[*]} -gt 0 ]]
                 then
                     for trigger in "${TRIGGERS[@]}"
@@ -318,13 +318,13 @@ function migrateToLastVersion {
             fi
     fi
 
-    if [ $MIGRATION_STATUS -eq 0 ] && [ $TRIGGER_STATUS -eq 0 ] && [ ${dbVersionArray[0]} -gt 0 ]
+    if [[ $MIGRATION_STATUS -eq 0 ]] && [ $TRIGGER_STATUS -eq 0 ] && [ ${dbVersionArray[0]} -gt 0 ]
         then
             declare -a PROCEDURES
             while read line
             do
                 PROCEDURES=("${PROCEDURES[@]}" "$line")
-            done < <(LANG=C ls procedures | grep  '.sql' | sed -r 's/\.sql//')
+            done < <(LANG=C ls procedures | grep  '.sql')
             if [[ ${#PROCEDURES[*]} -gt 0 ]]; then
                 for procedure in "${PROCEDURES[@]}"
                 do
