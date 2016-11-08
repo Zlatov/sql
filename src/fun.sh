@@ -372,6 +372,50 @@ function migrate {
     fi
 }
 
+function proceduresList {
+    if [ -d ./procedures ]
+        then
+            declare -a PROCEDURES
+            while read line
+            do
+                PROCEDURES=("${PROCEDURES[@]}" "$line")
+            done < <(LANG=C ls procedures | grep  '.sql')
+            if [[ ${#PROCEDURES[@]} -gt 0 ]]
+                then
+                    echo -en $COLOR_GREEN
+                    echo "Список процедур:"
+                    echo -en $STYLE_DEFAULT
+                    for procedure in "${PROCEDURES[@]}"
+                    do
+                        echo procedure
+                    done
+                    yN "Применить процедуры [yes/NO]"
+                    if [[ $YN -eq 1 ]]
+                        then
+                            for procedure in "${PROCEDURES[@]}"
+                            do
+                                echo -en $COLOR_GREEN
+                                echo -e "Применение процедур в $STYLE_DEFAULT$procedure:"
+                                echo -en $STYLE_DEFAULT
+                                (mysql --host=$DBHOST --port=3306 --user="$DBUSER" --database="$DBNAME" -s < "./procedures/$procedure") >/dev/null
+                                PROCEDURE_STATUS=$?
+                                if [ $PROCEDURE_STATUS -eq 0 ]
+                                    then
+                                        echo -en $COLOR_GREEN
+                                        echo "Успешно."
+                                        echo -en $STYLE_DEFAULT
+                                    else
+                                        echo -en $COLOR_RED
+                                        echo -e "Ошибка применения процедур."
+                                        echo -en $STYLE_DEFAULT
+                                        break
+                                fi
+                            done
+                    fi
+            fi
+    fi
+}
+
 function migrationsList {
     VERSIONS=(`LANG=C ls migration | grep  '.sql' | sed -r 's/\.sql//'`)
     echo -en $COLOR_GREEN

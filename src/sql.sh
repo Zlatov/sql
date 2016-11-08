@@ -92,6 +92,9 @@ case $1 in
     migrations)
         migrationsList
         ;;
+    procedures)
+        proceduresList
+        ;;
     version)
         echoVersion
         ;;
