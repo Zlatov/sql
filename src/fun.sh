@@ -387,7 +387,7 @@ function proceduresList {
                     echo -en $STYLE_DEFAULT
                     for procedure in "${PROCEDURES[@]}"
                     do
-                        echo procedure
+                        echo $procedure
                     done
                     yN "Применить процедуры [yes/NO]"
                     if [[ $YN -eq 1 ]]
