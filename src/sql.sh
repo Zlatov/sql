@@ -107,6 +107,14 @@ case $1 in
     dbconf)
         echoDbConf
         ;;
+    data)
+        if [[ $2 === '' ]]
+            then
+                echoDatas
+            else
+                toData $2
+        fi
+        ;;
     *)
         sqlMan
         ;;

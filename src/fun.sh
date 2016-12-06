@@ -470,3 +470,13 @@ function echoDbConf {
     fi
 }
 
+function echoDatas {
+    DATAS=(`LANG=C ls data | grep  '.sql' | sed -r 's/\.sql//'`)
+    echo -en $COLOR_GREEN
+    echo "Список данных:"
+    echo -en $STYLE_DEFAULT
+    for value in "${DATAS[@]}"
+    do
+        echo $value
+    done
+}
