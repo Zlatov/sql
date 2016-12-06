@@ -480,3 +480,19 @@ function echoDatas {
         echo $value
     done
 }
+
+function toData {
+    (mysql --host=$DBHOST --port=3306 --user="$DBUSER" --database="$DBNAME" -s < "./data/$1.sql") >/dev/null
+    TODATA_STATUS=$?
+    if [ $TODATA_STATUS -eq 0 ]
+        then
+            echo -en $COLOR_GREEN
+            echo "Успешно."
+            echo -en $STYLE_DEFAULT
+        else
+            echo -en $COLOR_RED
+            echo -e "Ошибка добавления данных."
+            echo -en $STYLE_DEFAULT
+            break
+    fi
+}

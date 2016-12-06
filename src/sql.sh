@@ -108,11 +108,11 @@ case $1 in
         echoDbConf
         ;;
     data)
-        if [[ $2 === '' ]]
+        if [[ $2 == '' ]]
             then
                 echoDatas
             else
-                toData $2
+                toData "$2"
         fi
         ;;
     *)
