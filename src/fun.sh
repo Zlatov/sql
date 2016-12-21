@@ -255,6 +255,9 @@ function migrateToLastVersion {
         VERSIONS=("${VERSIONS[@]}" "$line")
     done < <(LANG=C ls migration | grep  '.sql' | sed -r 's/\.sql//')
 
+    WE_HAVE_SOME_MIGRATION=0
+    MIGRATION_STATUS=0
+
     if [[ ${#VERSIONS[*]} -gt 0 ]]
         then
             # Перебор и выполнение необходимых миграций
@@ -265,27 +268,30 @@ function migrateToLastVersion {
                 if [[ ${mArray[0]} -gt ${dbArray[0]} ]]
                     then
                         migrate $mVersion
+                        WE_HAVE_SOME_MIGRATION=1
                         if [ $MIGRATION_STATUS -eq 1 ]; then break; fi
                     else
                         if [[ ${mArray[1]} -gt ${dbArray[1]} ]]
                             then
                                 migrate $mVersion
+                                WE_HAVE_SOME_MIGRATION=1
                                 if [ $MIGRATION_STATUS -eq 1 ]; then break; fi
                             else
                                 if [[ ${mArray[2]} -gt ${dbArray[2]} ]]
                                     then
                                         migrate $mVersion
+                                        WE_HAVE_SOME_MIGRATION=1
                                         if [ $MIGRATION_STATUS -eq 1 ]; then break; fi
                                 fi
                         fi
                 fi
             done
-        else
-            MIGRATION_STATUS=0
     fi
 
+    DB_VERSION=$(getDbVersion)
     dbVersionArray=(${DB_VERSION//./ })
-    if [[ $MIGRATION_STATUS -eq 0 ]] && [ ${dbVersionArray[0]} -gt 0 ]
+
+    if [[ $MIGRATION_STATUS -eq 0 ]] && [[ ${dbVersionArray[0]} -gt 0 ]] && [[ $WE_HAVE_SOME_MIGRATION -eq 1 ]]
         then
             declare -a TRIGGERS
             while read line
@@ -318,7 +324,7 @@ function migrateToLastVersion {
             fi
     fi
 
-    if [[ $MIGRATION_STATUS -eq 0 ]] && [ $TRIGGER_STATUS -eq 0 ] && [ ${dbVersionArray[0]} -gt 0 ]
+    if [[ $MIGRATION_STATUS -eq 0 ]] && [[ $TRIGGER_STATUS -eq 0 ]] && [ ${dbVersionArray[0]} -gt 0 ]
         then
             declare -a PROCEDURES
             while read line
@@ -493,6 +499,32 @@ function toData {
             echo -en $COLOR_RED
             echo -e "Ошибка добавления данных."
             echo -en $STYLE_DEFAULT
-            break
+    fi
+}
+
+function reset {
+    `mysql --host=$DBHOST --port=3306 --user="$DBUSER" -e"DROP DATABASE $DBNAME;"` >/dev/null
+    MYSQL_STATUS=$?
+    if [[ $MYSQL_STATUS -eq 0 ]]
+        then
+            echo -en $COLOR_GREEN
+            echo "Успешно."
+            echo -en $STYLE_DEFAULT
+        else
+            echo -en $COLOR_RED
+            echo -e "Ошибка."
+            echo -en $STYLE_DEFAULT
+    fi
+    `mysql --host=$DBHOST --port=3306 --user="$DBUSER" -e"CREATE SCHEMA $DBNAME DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;"` >/dev/null
+    MYSQL_STATUS=$?
+    if [[ $MYSQL_STATUS -eq 0 ]]
+        then
+            echo -en $COLOR_GREEN
+            echo "Успешно."
+            echo -en $STYLE_DEFAULT
+        else
+            echo -en $COLOR_RED
+            echo -e "Ошибка."
+            echo -en $STYLE_DEFAULT
     fi
 }

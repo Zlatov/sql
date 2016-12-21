@@ -107,6 +107,9 @@ case $1 in
     dbconf)
         echoDbConf
         ;;
+    reset)
+        reset
+        ;;
     data)
         if [[ $2 == '' ]]
             then
