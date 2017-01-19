@@ -508,11 +508,11 @@ function reset {
     if [[ $MYSQL_STATUS -eq 0 ]]
         then
             echo -en $COLOR_GREEN
-            echo "Успешно."
+            echo "БД $DBNAME удалена успешно."
             echo -en $STYLE_DEFAULT
         else
             echo -en $COLOR_RED
-            echo -e "Ошибка."
+            echo -e "Ошибка удаления."
             echo -en $STYLE_DEFAULT
     fi
     `mysql --host=$DBHOST --port=3306 --user="$DBUSER" -e"CREATE SCHEMA $DBNAME DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;"` >/dev/null
@@ -520,11 +520,11 @@ function reset {
     if [[ $MYSQL_STATUS -eq 0 ]]
         then
             echo -en $COLOR_GREEN
-            echo "Успешно."
+            echo "БД $DBNAME создана успешно."
             echo -en $STYLE_DEFAULT
         else
             echo -en $COLOR_RED
-            echo -e "Ошибка."
+            echo -e "Ошибка создания."
             echo -en $STYLE_DEFAULT
     fi
 }
