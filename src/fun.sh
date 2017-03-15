@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if [[ $SQL_DEBUG -eq 1 ]]
+    then
+        echo -en $COLOR_GREEN
+        echo -e "Включён файл функций $STYLE_DEFAULT$BASH_ARGV."
+        echo -en $STYLE_DEFAULT
+fi
+
 function sqlMan {
     cat ../vendor/zlatov/sql/src/man.txt
 }
@@ -58,6 +65,11 @@ function createConfig {
 
     echo "#!/bin/bash
 
+TEXT_BOLD='\033[1m'
+COLOR_RED='\033[31m'
+COLOR_GREEN='\033[32m'
+STYLE_DEFAULT='\033[0m'
+
 DBHOST=\"$DBHOST\"
 DBNAME=\"$DBNAME\"
 DBUSER=\"$DBUSER\"
@@ -66,11 +78,14 @@ DBPASS=\"$DBPASS\"
 REMOTE_NAME=\"$REMOTE_NAME\"
 REMOTE_PATH=\"$REMOTE_PATH\"
 
-#echo -en \$COLOR_GREEN
-#echo \"Конфигурационный файл \$BASH_ARGV был включен.\"
-#echo \"Работа с базой данных: \$DBNAME\"
-#echo -en \$STYLE_DEFAULT
+SQL_DEBUG=0
 
+if [[ \$SQL_DEBUG -eq 1 ]]
+    then
+        echo -en \$COLOR_GREEN
+        echo -e \"Включён локальный конфигурационный файл: \$STYLE_DEFAULT\$BASH_ARGV.\"
+        echo -en \$STYLE_DEFAULT
+fi
 " > config.sh
 
     if [ ! -f ./config.sh ]
@@ -84,6 +99,27 @@ REMOTE_PATH=\"$REMOTE_PATH\"
             echo -en $STYLE_DEFAULT
     fi
 
+}
+
+function dump {
+    DBDATE=`date +%Y-%m-%d-%H-%M-%S`
+    echo -en $COLOR_GREEN
+    echo "Создаем бэкап $DBNAME-$DBDATE.tar.gz"
+    echo -en $STYLE_DEFAULT
+    `mysqldump --opt -u$DBUSER -h$DBHOST $DBNAME > ./dump/$DBNAME-$DBDATE.sql` >/dev/null
+    MYSQLDUMP_STATUS=$?
+    if [ $MYSQLDUMP_STATUS -eq 0 ]
+        then
+            echo -en $COLOR_GREEN
+            echo "Создан бэкап ./dump/$DBNAME-$DBDATE.sql"
+            echo -en $STYLE_DEFAULT
+            tar -czf ./dump/$DBNAME-$DBDATE.tar.gz ./dump/$DBNAME-$DBDATE.sql
+            rm ./dump/$DBNAME-$DBDATE.sql
+        else
+            echo -en $COLOR_RED
+            echo "Ошибка создания дампа ./dump/$DBNAME-$DBDATE.sql"
+            echo -en $STYLE_DEFAULT
+    fi
 }
 
 function createDefaultFolders {

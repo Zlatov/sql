@@ -1,15 +1,19 @@
 #!/bin/bash
-if [ -f ../vendor/zlatov/sql/src/config.sh ]
-    then
-    . "../vendor/zlatov/sql/src/config.sh"
-fi
 
+# Если есть локальный конфиг - подключаем, установим пароль для mysql
 if [ -f ./config.sh ]
     then
-    . "./config.sh"
-    export MYSQL_PWD="$DBPASS" # вместо --password="$DBPASS"
+        . "./config.sh"
+        export MYSQL_PWD="$DBPASS"
 fi
 
+# Если есть глобальный конфиг - подключаем
+if [ -f ../vendor/zlatov/sql/src/config.sh ]
+    then
+        . "../vendor/zlatov/sql/src/config.sh"
+fi
+
+# По первому параметру команды определяем что будем делать (./sql init)
 case $1 in
     init)
         if [ ! -f ./config.sh ]
@@ -49,7 +53,7 @@ case $1 in
     dump)
         if [[ $2 == '' ]]
             then
-                echo "Создаем дамп БД"
+                dump
             else
                 echo "Восстанавливаем БД из дампа $2"
         fi
