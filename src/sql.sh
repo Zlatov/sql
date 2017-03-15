@@ -126,6 +126,3 @@ case $1 in
         sqlMan
         ;;
 esac
-
-# cd "$SQLPATH"
-#. config.sh

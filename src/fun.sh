@@ -185,8 +185,14 @@ sql
 }
 
 function dumpList {
-    echo "Список локальных дампов"
-    ls -la dump
+    DUMP_LIST=(`ls dump`)
+    if [ ${#DUMP_LIST[*]} -eq 0 ]
+        then
+            echo "Нет локальных дампов"
+        else
+            echo "Список локальных дампов:"
+            ls dump
+    fi
 }
 
 function checkTableVersionExist {
