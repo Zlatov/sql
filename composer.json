@@ -1,12 +1,14 @@
 {
     "name": "zlatov/sql",
-    "description": "Init and dump",
+    "description": "Миграции mysql через .sql",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "iadfeshchm",
-            "email": "zlatov@ya.ru"
+            "name": "Максим Златов",
+            "email": "zlatov@ya.ru",
+            "homepage": "http://zlatov.net",
+            "role": "Developer"
         }
     ]
 }
