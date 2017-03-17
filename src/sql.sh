@@ -62,7 +62,7 @@ case $1 in
                     echo -en $STYLE_DEFAULT
                 else
                     echo "Восстанавливаем БД $DBNAME из дампа $2"
-                    tar -xzOf "$1" | mysql -u"$DBUSER" "$DBNAME"
+                    tar -xzOf "./dump/$2" | mysql -u"$DBUSER" "$DBNAME"
                     if [[ $? -eq 1 ]]
                         then
                             echo -en $COLOR_RED

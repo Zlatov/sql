@@ -107,17 +107,32 @@ function dump {
     echo "Создаем бэкап $DBNAME-$DBDATE.tar.gz"
     echo -en $STYLE_DEFAULT
     `mysqldump --opt -u$DBUSER -h$DBHOST $DBNAME > ./dump/$DBNAME-$DBDATE.sql` >/dev/null
-    MYSQLDUMP_STATUS=$?
-    if [ $MYSQLDUMP_STATUS -eq 0 ]
+    if [ $? -eq 0 ]
         then
             echo -en $COLOR_GREEN
             echo "Создан бэкап ./dump/$DBNAME-$DBDATE.sql"
             echo -en $STYLE_DEFAULT
-            tar -czf ./dump/$DBNAME-$DBDATE.tar.gz ./dump/$DBNAME-$DBDATE.sql
-            rm ./dump/$DBNAME-$DBDATE.sql
+            tar -czf ./dump/$DBNAME-$DBDATE.tar.gz -C"./dump/" $DBNAME-$DBDATE.sql
+            if [ $? -eq 0 ]
+                then
+                    echo -en $COLOR_GREEN
+                    echo "Создан дамп ./dump/$DBNAME-$DBDATE.tar.gz"
+                    echo -en $STYLE_DEFAULT
+                    rm ./dump/$DBNAME-$DBDATE.sql
+                    if [ $? -eq 0 ]
+                        then
+                            echo -en $COLOR_GREEN
+                            echo "Удален бэкап ./dump/$DBNAME-$DBDATE.sql"
+                            echo -en $STYLE_DEFAULT
+                    fi
+                else
+                    echo -en $COLOR_RED
+                    echo "Ошибка создания дампа ./dump/$DBNAME-$DBDATE.tar.gz"
+                    echo -en $STYLE_DEFAULT
+            fi
         else
             echo -en $COLOR_RED
-            echo "Ошибка создания дампа ./dump/$DBNAME-$DBDATE.sql"
+            echo "Ошибка создания бэкапа ./dump/$DBNAME-$DBDATE.sql"
             echo -en $STYLE_DEFAULT
     fi
 }
