@@ -7,7 +7,7 @@
 2. `mkdir sql; cd sql; ln -s ../vendor/zlatov/sql/src/sql.sh ./sql`
 3. `./sql init`
 
-## Использование
+## Использование, Instructions
 
 `./sql init` — настройка доступа к бд и адреса удаленного сервера
 
