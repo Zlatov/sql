@@ -106,7 +106,7 @@ function dump {
     echo -en $COLOR_GREEN
     echo "Создаем бэкап $DBNAME-$DBDATE.tar.gz"
     echo -en $STYLE_DEFAULT
-    `mysqldump --opt -u$DBUSER -h$DBHOST $DBNAME > ./dump/$DBNAME-$DBDATE.sql` >/dev/null
+    `mysqldump --opt -u$DBUSER -h$DBHOST $DBNAME | sed -r 's/!50017 DEFINER/ 50017 DEFINER/' > ./dump/$DBNAME-$DBDATE.sql` >/dev/null
     if [ $? -eq 0 ]
         then
             echo -en $COLOR_GREEN
