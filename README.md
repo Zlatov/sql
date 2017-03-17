@@ -1,7 +1,7 @@
 # zlatov/sql (в разработке)
 
 
-## Установка, настройка
+## Установка, настройка, Install and config
 
 1. `composer require zlatov/sql:~1.0.0`
 2. `mkdir sql; cd sql; ln -s ../vendor/zlatov/sql/src/sql.sh ./sql`
