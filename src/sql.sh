@@ -55,7 +55,25 @@ case $1 in
             then
                 dump
             else
-                echo "Восстанавливаем БД из дампа $2"
+                if [ ! -f ./dump/$2 ]
+                then
+                    echo -en $COLOR_RED
+                    echo "Не найден дамп $2."
+                    echo -en $STYLE_DEFAULT
+                else
+                    echo "Восстанавливаем БД $DBNAME из дампа $2"
+                    tar -xzOf "$1" | mysql -u"$DBUSER" "$DBNAME"
+                    if [[ $? -eq 1 ]]
+                        then
+                            echo -en $COLOR_RED
+                            echo -e "Ошибка при восстановлении."
+                            echo -en $STYLE_DEFAULT
+                        else
+                            echo -en $COLOR_GREEN
+                            echo -e "Успешно восстановлена бд $DBNAME."
+                            echo -en $STYLE_DEFAULT
+                    fi
+                fi
         fi
         ;;
     push)
@@ -76,7 +94,18 @@ case $1 in
                                 echo "Не найден дамп $2."
                                 echo -en $STYLE_DEFAULT
                             else
-                                echo "Отправляем $2 на сервер $REMOTE_NAME в $REMOTE_PATH"
+                                echo "Отправляем $2 на сервер $REMOTE_NAME в ${REMOTE_PATH}/sql/dump/$2"
+                                scp "./dump/$2" $REMOTE_NAME:$REMOTE_PATH/sql/dump/
+                                if [[ $? -eq 1 ]]
+                                    then
+                                        echo -en $COLOR_RED
+                                        echo -e "Ошибка отправки."
+                                        echo -en $STYLE_DEFAULT
+                                    else
+                                        echo -en $COLOR_GREEN
+                                        echo -e "Успешно отправлен дамп на сервер."
+                                        echo -en $STYLE_DEFAULT
+                                fi
                         fi
                 fi
         fi
